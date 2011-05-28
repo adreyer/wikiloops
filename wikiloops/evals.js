@@ -1,27 +1,32 @@
 var find_loop = function (name, coll){
-
-  var contains = function(arr, val){
-    for(i=0;i<arr.length;i++){
-        if(val == arr[i]){
-          return true;
-        }
+    var contains = function(arr, val){
+      for(i=0;i<arr.length;i++){
+          if(val == arr[i]){
+            return true;
+          }
+      }
+      return false;
     }
-    return false;
-  }
 
     var flhelp = function(cname, path){
       var cobj = db[coll].findOne({name: cname});
-      if(!cobj || !cobj.links){
-        return path
+      if(!cobj || !cobj.links){// deadend
+        return path;
       }
-      if(contains(path, cobj.links[0])){
+      if(cobj.path){// already computed
+        return path.concat(cobj.path);
+      }
+      if(contains(path, cobj.links[0])){// loop
         path[path.length] = cobj.links[0];
         return path;
       }
       path[path.length] = cobj.links[0];
-      return flhelp(cobj.links[0], path);
+      var prev_path = path.length - 2;
+      var npath = flhelp(cobj.links[0], path);
+      cobj.path = npath.slice(prev_path);
+      db[coll].save(cobj)
+      return npath;
     }
 
-    var path = flhelp(name, [name]);
-    return path
+    return flhelp(name, [name]);
 }
