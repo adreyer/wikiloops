@@ -29,4 +29,20 @@ var find_loop = function (name, coll){
     }
 
     return flhelp(name, [name]);
-}
+
+var replace_redirects = function replace_redirects(coll){
+    var fix_redirect = function (x){
+        var from = x.name;
+        var to = x.links
+        var fix_one = function (x){
+            for(i=0;i<x.links.length;i++){
+                if(x.links[i] === from){
+                    x.links[i] = to;
+                };
+            };
+        };
+        db[coll].find({link: from}).forEach(fix_one);
+    };
+
+    db[coll].find({redirect=true}.forEach(fix_redirect);
+};

@@ -2,7 +2,11 @@ import re
 from xml.sax import make_parser
 from xml.sax.handler import ContentHandler
 
+from mongobackend import LinkAdder
+
 CAMEL_RE = re.compile("([a-z])([A-Z])")
+LINK_RE = re.compile(r'\[\[([\w ()]+)(?:\|.*?)?\]\]')
+REDIRECT_RE = re.compile(r'^#REDIRECT')
 
 def parsewiki(filename):
     parser = make_parser()
@@ -12,6 +16,7 @@ def parsewiki(filename):
 
 class WikiHandler(ContentHandler):
     def __init__(self):
+        self.linkadder = LinkAdder()
         self.in_text = False
         self.in_title = False
         self.title = ''
@@ -39,9 +44,11 @@ class WikiHandler(ContentHandler):
             self.in_title = False
         if name == 'text':
             self.in_text = False
-            find_links(self.title, self.text)
+            self.find_links(self.title, self.text)
 
-
-linkre = re.compile(r'\[\[([\w ()]+)(?:\|.*?)?\]\]')
-def find_links(title, text):
-    make_links(title, [m.groups()[0].lower() for m in linkre.finditer(text)])
+    def find_links(self, title, text):
+        if REDIRECT_RE.match(text):
+            redirect = True
+        else:
+            redirect = False
+        self.linkadder.make_links(title, [m.groups()[0].lower() for m in LINK_RE.finditer(text)], redirect=redirect)
